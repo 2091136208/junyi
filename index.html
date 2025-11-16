@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>浪漫互动加强版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    height:100vh;
+    background:linear-gradient(135deg,#ffd6e7,#ffeaf4);
+    overflow:hidden;
+    font-family:'Comic Sans MS',cursive;
+    animation: bgChange 8s ease-in-out infinite alternate;
+}
+@keyframes bgChange{
+    0%{background:linear-gradient(135deg,#ffd6e7,#ffeaf4);}
+    50%{background:linear-gradient(135deg,#ffeaf4,#fff0f6);}
+    100%{background:linear-gradient(135deg,#fff0f6,#ffd6e7);}
+}
+/* 顶部滑动文字 */
+@keyframes slideRight {0%{left:-100%;}100%{left:100%;}}
+.top-slide-text{
+    position:fixed;top:0;left:-100%;font-size:24px;
+    font-weight:bold;color:#ff3366;animation:slideRight 12s linear infinite;
+    z-index:10;white-space:nowrap;
+}
+.top-slide-text.second{animation-delay:4s;}
+
+canvas#fireworks{
+    position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;
+}
+
+.center-content{
+    position:relative;z-index:2;height:100vh;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+}
+h1{
+    color:#ff6699;font-size:2em;font-weight:bold;
+    text-shadow:0 0 8px rgba(255,255,255,0.8);
+}
+button{
+    padding:10px 20px;margin:5px;border:none;border-radius:20px;
+    background-color:#ff66b2;color:white;cursor:pointer;font-size:18px;
+}
+button:hover{transform:scale(1.05);box-shadow:0 0 15px #ff99cc;}
+.envelope{
+    width:150px;height:100px;position:relative;background:#ffcccc;
+    cursor:pointer;margin-top:20px;transition:transform 0.5s;
+}
+.envelope::before{
+      content:'';position:absolute;
+    top:0;left:0;
+    border-width:50px 75px 0 75px;
+    border-style:solid;
+    border-color:#ff9999 transparent transparent transparent;
+    transition:transform 1s, border-color 0.5s;
+    transform-origin:top;
+}
+.envelope.open::before
+{transform:rotateX(180deg);}
+.letter{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:60%;max-width:400px;background:rgba(255,255,255,0.9);
+    padding:20px;border-radius:10px;z-index:100;
+    white-space:pre-line;text-align:center;opacity:0;transition:opacity 1s;
+}
+.letter.show{opacity:1;}
+.floating-name{
+    position:fixed;font-weight:bold;white-space:nowrap;
+    background:linear-gradient(to right,#ff0000,#ff9900,#ffff00);
+    -webkit-background-clip:text;color:transparent;
+    animation:arcFly linear forwards;
+}
+@keyframes arcFly{
+    0%{transform:translate(100vw,0vh);}
+    50%{transform:translate(50vw,-10vh);}
+    100%{transform:translate(-20vw,0vh);}
+}
+.floating-text{
+    position:fixed;color:#ff69b4;font-size:22px;
+    animation:floatUp 4s linear forwards;
+}
+@keyframes floatUp{
+    0%{transform:translateY(0);opacity:1;}
+    100%{transform:translateY(-200px);opacity:0;}
+}
+.petal{position:absolute;background-size:contain;background-repeat:no-repeat;
+    animation:fall linear infinite;z-index:1;pointer-events:none;}
+@keyframes fall{
+    0%{transform:translateY(-10vh) rotate(0deg);opacity:1;}
+    100%{transform:translateY(110vh) rotate(720deg);opacity:0;}
+}
+.heart{
+    position:absolute;background:linear-gradient(135deg, rgba(255,51,102,0.9), rgba(255,102,153,0.5));
+    transform:rotate(45deg);animation:fall linear infinite;
+    z-index:1;pointer-events:none;
+}
+.heart::before,.heart::after{
+    content:'';position:absolute;width:100%;height:100%;
+    background:linear-gradient(135deg, rgba(255,51,102,0.9), rgba(255,102,153,0.5));
+    border-radius:50%;
+}
+.heart::before{top:-50%;left:0;}
+.heart::after{left:-50%;top:0;}
+#chatbox{
+    position:fixed;bottom:20px;right:20px;background:rgba(255,255,255,0.8);
+    padding:10px;border-radius:8px;z-index:10;
+}
+#chatbox input{padding:5px;width:150px;}
+#popup{opacity:0;transition:opacity 1s;margin-top:20px;}
+#popup.show{opacity:1;}
+
+/* 光标动画 */
+.cursor {
+    display: inline-block;
+    width: 2px;
+    background-color: #ff3366;
+    margin-left: 2px;
+}
+.blink {
+    animation: blinkCursor 0.8s steps(1) infinite;
+}
+@keyframes blinkCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* 弹窗整体容器 */
+#popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* 默认隐藏 */
+    z-index: 1000;
+}
+
+/* 半透明背景遮罩 */
+.popup-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px); /* 可选：背景模糊 */
+    cursor: pointer;
+}
+
+/* 弹出的图片内容 */
+.popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    transition: transform 0.8s ease-out, opacity 0.8s ease-out;
+}
+
+#popup.show .popup-content {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+#popup-img {
+    max-width: 80vw;
+    max-height: 80vh;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(255,102,153,0.8);
+}
+#popup.show-bg .popup-bg { opacity:1; }
+
+</style>
+</head>
+<body>
+
+<canvas id="fireworks"></canvas>
+<div class="top-slide-text">❤ 永远爱你 ❤ 余生请多指教 ❤ 遇见你是我最美的故事 ❤</div>
+<div class="top-slide-text second">❤ 永远爱你 ❤ 余生请多指教 ❤ 遇见你是我最美的故事 ❤</div>
+
+<div class="center-content">
+    <h1>🌸 遇见你是我最美的故事 🌸</h1>
+    <button onclick="showImage()">点我看看</button>
+    <!-- 悬浮弹窗（默认隐藏） -->
+<div id="popup">
+    <div class="popup-bg" onclick="closeImage()"></div>
+    <div class="popup-content">
+        <img id="popup-img" src="jpg/2.jpg" alt="甜蜜瞬间">
+    </div>
+</div>
+    <div class="envelope" onclick="openEnvelope()" title="点击收信"></div>
+</div>
+
+<div class="letter" id="letterContent"></div>
+
+<div id="chatbox">
+    <input id="message" placeholder="写一句话...">
+    <button onclick="sendMessage()">发送</button>
+</div>
+
+<script>
+// 基础效果
+for(let i=0;i<50;i++){createHeart();}
+setInterval(createHeart,500);
+
+function showImage(){
+    popup.style.display = 'block';
+
+    // 背景先出现
+    popup.classList.add('show-bg');
+
+    // 延迟图片弹出
+    setTimeout(() => {
+        popup.classList.add('show');
+        triggerHeartExplosion();
+        launchFirework(window.innerWidth / 2, window.innerHeight / 2, true);
+    }, 200);
+
+}
+function createFloatingName(){
+    const name=document.createElement('div');
+    name.className='floating-name';
+    name.textContent="殷君怡";
+    name.style.fontSize=(22+Math.random()*12)+"px";
+    name.style.top=(Math.random()*90)+"vh";
+    name.style.animationDuration=(5+Math.random()*3)+'s';
+    document.body.appendChild(name);
+    setTimeout(()=>name.remove(),8000);
+}
+const quotes=["一见如故","余生请多指教","你是我唯一","永远爱你","星河不及你"];
+function createQuote(){
+    const text=document.createElement('div');
+    text.className='floating-text';
+    text.textContent=quotes[Math.floor(Math.random()*quotes.length)];
+    text.style.left=Math.random()*80+"vw";
+    text.style.top=(Math.random()*80)+"vh";
+    document.body.appendChild(text);
+    setTimeout(()=>text.remove(),4000);
+}
+function sendMessage(){
+    const val=document.getElementById('message').value.trim();
+    if(!val) return;
+    const text=document.createElement('div');
+    text.className='floating-text';
+    text.textContent=val;
+    text.style.left="50vw";
+    text.style.top="80vh";
+    document.body.appendChild(text);
+    setTimeout(()=>text.remove(),4000);
+    launchFirework(window.innerWidth/2, window.innerHeight/2, true);
+    triggerHeartExplosion();
+    document.getElementById('message').value="";
+}
+function createPetal(){
+    const petal=document.createElement('div');
+    petal.className='petal';
+    petal.style.backgroundImage="url('https://upload.wikimedia.org/wikipedia/commons/3/3b/Sakura_flower_icon.svg')";
+    const size=10+Math.random()*15;
+    petal.style.width=size+"px";petal.style.height=size+"px";
+    petal.style.left=Math.random()*100+'vw';
+    petal.style.top='-10vh';
+    petal.style.animationDuration=(3+Math.random()*4)+'s';
+    document.body.appendChild(petal);
+    setTimeout(()=>petal.remove(),8000);
+}
+function createHeart(){
+    const heart=document.createElement('div');
+    heart.className='heart';
+    const size=20+Math.random()*20;
+    heart.style.width=size+"px";heart.style.height=size+"px";
+    heart.style.left=Math.random()*100+'vw';
+    heart.style.top='-10vh';
+    heart.style.animationDuration=(4+Math.random()*3)+'s';
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),7000);
+}
+function triggerHeartExplosion(){
+    for(let i=0;i<50;i++){createHeart();}
+}
+
+// 信封点击切换收信 / 关信（修改版：带闪烁光标 + 随机速度打字机）
+let envelopeOpen=false;
+// 预加载轻微键盘音效（你可以换成自己的音频文件路径）
+const typeSound = new Audio('');
+typeSound.volume = 0.2; // 调小音量，柔和一些
+
+function openEnvelope() {
+    const envelope = document.querySelector('.envelope');
+    const letter = document.getElementById('letterContent');
+
+    if (!envelopeOpen) {
+        envelope.classList.add('open');
+        letter.classList.add('show');
+
+        const text = "亲爱的君怡宝宝 ❤️\n你是我一生最美的遇见。\n愿我们时光不老，我们不散。纸短情长，写不尽心中万千。唯愿用余生，一字一句说给你听。\n";
+        letter.innerHTML = "<span id='typeText'></span><span class='cursor'></span>";
+        const typeTextEl = document.getElementById('typeText');
+        const cursorEl = document.querySelector('.cursor');
+
+        let index = 0;
+
+        // 打字函数
+        function typeWriter() {
+            if (index < text.length) {
+                typeTextEl.innerHTML += text.charAt(index);
+
+                // 空格或回车不发声，其他字符发键盘音
+                if (text.charAt(index).trim() !== "") {
+                    const soundClone = typeSound.cloneNode();
+                    soundClone.play().catch(() => {});
+                }
+
+                index++;
+                // 随机速度 80~160ms
+                setTimeout(typeWriter, 80 + Math.random() * 80);
+            } else {
+                // 打完后 1 秒再触发爱心和烟花
+                cursorEl.classList.add('blink');
+                setTimeout(() => {
+                    triggerHeartExplosion();
+                    launchFirework(window.innerWidth / 2, window.innerHeight / 2, true);
+                }, 1000);
+            }
+        }
+
+        // 剧情节奏：信封翻盖后 0.5s 开始打字
+        setTimeout(() => {
+            typeWriter();
+        }, 500);
+
+        envelopeOpen = true;
+    } else {
+        envelope.classList.remove('open');
+        letter.classList.remove('show');
+        letter.innerHTML = "";
+        envelopeOpen = false;
+    }
+}
+function heartPathAnimation(){
+    const centerX=window.innerWidth/2;
+    const centerY=window.innerHeight/2;
+    let t=0;
+    const interval=setInterval(()=>{
+        const x=centerX+80*Math.pow(Math.sin(t),3);
+        const y=centerY-(60*Math.cos(t)-30*Math.cos(2*t)-20*Math.cos(3*t)-10*Math.cos(4*t));
+        const heart=document.createElement('div');
+        heart.className='heart';
+        heart.style.width="20px";heart.style.height="20px";
+        heart.style.left=x+"px";heart.style.top=y+"px";
+        document.body.appendChild(heart);
+        setTimeout(()=>heart.remove(),3000);
+        t+=Math.PI/32;
+        if(t>Math.PI*2) clearInterval(interval);
+    },50);
+}
+
+// 烟花动画
+const canvas=document.getElementById('fireworks');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+let particles=[];
+function launchFirework(x,y,drawLines=false){
+    let points=[];
+    for(let i=0;i<50;i++){
+        const angle=(i*Math.PI*2)/50;
+        const speed=Math.random()*4;
+        const vx=Math.cos(angle)*speed;
+        const vy=Math.sin(angle)*speed;
+        particles.push({x,y,vx,vy,alpha:1,color:`hsl(${Math.random()*360},100%,60%)`});
+        if(drawLines) points.push({x:x+vx*20,y:y+vy*20});
+    }
+    if(drawLines){
+        setTimeout(()=>{
+            ctx.strokeStyle="rgba(255,255,255,0.7)";
+            ctx.beginPath();
+            points.forEach((p,idx)=>{
+                if(idx===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+            });
+            ctx.closePath();ctx.stroke();
+        },800);
+    }
+}
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach((p,i)=>{
+        p.x+=p.vx;p.y+=p.vy;
+        p.alpha-=0.02;
+        if(p.alpha<=0) particles.splice(i,1);
+        ctx.globalAlpha=p.alpha;
+        ctx.fillStyle=p.color;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,3,0,Math.PI*2);
+        ctx.fill();
+    });
+    requestAnimationFrame(animate);
+}
+animate();
+
+setInterval(createPetal,150);
+setInterval(createFloatingName,600);
+setInterval(createQuote,4000);
+
+document.addEventListener('click', e=>{
+    launchFirework(e.clientX,e.clientY,true);
+    triggerHeartExplosion();
+});
+
+// 弹出图片
+function showImage() {
+    const popup = document.getElementById('popup');
+    popup.style.display = 'block';
+    setTimeout(() => popup.classList.add('show'), 10); // 触发动画
+
+    // 伴随效果
+    triggerHeartExplosion();
+    launchFirework(window.innerWidth/2, window.innerHeight/2, true);
+}
+
+// 关闭图片
+function closeImage() {
+    const popup = document.getElementById('popup');
+    popup.classList.remove('show');
+    setTimeout(() => popup.style.display = 'none', 800); // 等动画结束再隐藏
+}
+
+// 可选：按 ESC 键关闭弹窗
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeImage();
+});
+document.getElementById('popup-img').addEventListener('click', () => {
+    triggerHeartExplosion();
+    launchFirework(window.innerWidth / 2, window.innerHeight / 2, true);
+});
+const words = [
+    "遇见你是我最美的奇遇💖",
+    "每次看你都觉得很幸福🌸",
+    "你是我眼里最亮的星✨"
+];
+document.querySelector('.popup-content').insertAdjacentHTML(
+    'beforeend',
+    `<p style="text-align:center;color:#fff;margin-top:15px;font-size:18px;">
+        ${words[Math.floor(Math.random()*words.length)]}
+    </p>`
+);
+
+</script>
+</body>
+</html>
